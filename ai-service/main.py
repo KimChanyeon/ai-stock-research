@@ -1,6 +1,12 @@
-def main():
-    print("Hello from ai-service!")
+from fastapi import FastAPI
+
+from routers.agents import router as agents_router
+
+app = FastAPI(title="AI Stock Research Service")
+
+app.include_router(agents_router, prefix="/api/v1")
 
 
-if __name__ == "__main__":
-    main()
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
