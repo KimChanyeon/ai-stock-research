@@ -15,6 +15,9 @@ Thumbs.db
 *.iml
 *.ipr
 
+# ===== Claude Code =====
+CLAUDE.md
+
 # ===== Environment =====
 .env
 .env.local
