@@ -83,3 +83,6 @@ ai-service/htmlcov/
 
 # ===== Docker =====
 *.override.yml
+
+# 포트폴리오 산출물 (스크립트로 생성)
+StockAgentHub_Portfolio.pptx
