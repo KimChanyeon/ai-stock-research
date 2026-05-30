@@ -29,27 +29,35 @@ async function onSubmit(question: string) {
     connectStream(questionId)
   } catch {
     store.isLoading = false
+    store.error = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.'
   }
 }
 
 function connectStream(questionId: number) {
-  connect(`/api/v1/questions/stream/${questionId}`, {
-    agent_status: (data: unknown) => {
-      const { agent, status, result } = data as { agent: string; status: string; result?: string }
-      store.setAgentStatus(agent, status as never)
-      if (agent === 'RouterAgent' && result === 'not_stock') {
-        store.isNotStock = true
+  connect(
+    `/api/v1/questions/stream/${questionId}`,
+    {
+      agent_status: (data: unknown) => {
+        const { agent, status, result } = data as { agent: string; status: string; result?: string }
+        store.setAgentStatus(agent, status as never)
+        if (agent === 'RouterAgent' && result === 'not_stock') {
+          store.isNotStock = true
+          store.isLoading = false
+          close()
+        }
+      },
+      complete: (data: unknown) => {
+        store.answer = data as never
         store.isLoading = false
+        refreshHistory()
         close()
-      }
+      },
     },
-    complete: (data: unknown) => {
-      store.answer = data as never
+    () => {
       store.isLoading = false
-      refreshHistory()
-      close()
+      store.error = 'AI 분석 중 연결이 끊어졌습니다. 다시 시도해 주세요.'
     },
-  })
+  )
 }
 
 async function refreshHistory() {
@@ -71,7 +79,11 @@ async function refreshHistory() {
 
       <QuestionInput :disabled="store.isLoading" @submit="onSubmit" />
 
-      <template v-if="store.currentQuestion">
+      <div v-if="store.error" class="error-banner">
+        {{ store.error }}
+      </div>
+
+      <template v-if="store.currentQuestion && !store.error">
         <p class="current-question">"{{ store.currentQuestion }}"</p>
         <div class="results">
           <AgentStatus :agents="store.agents" :is-not-stock="store.isNotStock" />
@@ -108,6 +120,14 @@ async function refreshHistory() {
 .desc {
   font-size: 13px;
   color: #94a3b8;
+}
+.error-banner {
+  font-size: 14px;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 12px 16px;
 }
 .current-question {
   font-size: 14px;

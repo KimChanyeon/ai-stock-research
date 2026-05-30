@@ -38,15 +38,15 @@ public class QuestionProcessor {
             aiServiceClient.streamEvents(runId, (event, data) -> {
                 try {
                     emitter.send(SseEmitter.event().name(event).data(data));
-
-                    if ("complete".equals(event)) {
-                        q.setStatus(QuestionStatus.SUCCESS);
-                        q.setAnswer(data);
-                        questionRepository.save(q);
-                        cacheService.set(q.getQuestion(), data);
-                    }
                 } catch (IOException e) {
                     log.warn("Failed to forward event to client, questionId={}", questionId);
+                }
+
+                if ("complete".equals(event)) {
+                    q.setStatus(QuestionStatus.SUCCESS);
+                    q.setAnswer(data);
+                    questionRepository.save(q);
+                    cacheService.set(q.getQuestion(), data);
                 }
             });
 

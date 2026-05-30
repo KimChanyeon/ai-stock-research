@@ -20,6 +20,7 @@ export const useQuestionStore = defineStore('question', () => {
   const currentQuestion = ref('')
   const isLoading = ref(false)
   const isNotStock = ref(false)
+  const error = ref<string | null>(null)
   const answer = ref<Answer | null>(null)
   const history = ref<HistoryItem[]>([])
 
@@ -33,6 +34,7 @@ export const useQuestionStore = defineStore('question', () => {
     agents.value.forEach((a) => (a.status = 'idle'))
     answer.value = null
     isNotStock.value = false
+    error.value = null
   }
 
   function setAgentStatus(name: string, status: AgentStatus) {
@@ -40,5 +42,5 @@ export const useQuestionStore = defineStore('question', () => {
     if (agent) agent.status = status
   }
 
-  return { currentQuestion, isLoading, isNotStock, answer, history, agents, reset, setAgentStatus }
+  return { currentQuestion, isLoading, isNotStock, error, answer, history, agents, reset, setAgentStatus }
 })

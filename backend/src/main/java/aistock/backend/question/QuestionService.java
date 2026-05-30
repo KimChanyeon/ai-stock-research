@@ -44,7 +44,15 @@ public class QuestionService {
         SseEmitter emitter = new SseEmitter(300_000L);
         emitters.put(questionId, emitter);
         emitter.onCompletion(() -> emitters.remove(questionId));
-        emitter.onTimeout(() -> emitters.remove(questionId));
+        emitter.onTimeout(() -> {
+            emitters.remove(questionId);
+            questionRepository.findById(questionId).ifPresent(q -> {
+                if (q.getStatus() == QuestionStatus.RUNNING || q.getStatus() == QuestionStatus.PENDING) {
+                    q.setStatus(QuestionStatus.FAIL);
+                    questionRepository.save(q);
+                }
+            });
+        });
         emitter.onError(e -> emitters.remove(questionId));
         questionProcessor.process(questionId, emitter);
     }

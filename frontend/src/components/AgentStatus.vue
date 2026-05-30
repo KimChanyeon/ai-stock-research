@@ -13,7 +13,7 @@ defineProps<{ agents: AgentState[]; isNotStock: boolean }>()
     </div>
 
     <ul v-else class="list">
-      <li v-for="agent in agents" :key="agent.name" class="item">
+      <li v-for="agent in agents" :key="agent.name" class="item" :class="agent.status">
         <span class="icon" :class="agent.status">
           <template v-if="agent.status === 'success'">✔</template>
           <template v-else-if="agent.status === 'running'">⏳</template>
@@ -59,6 +59,18 @@ defineProps<{ agents: AgentState[]; isNotStock: boolean }>()
   display: flex;
   align-items: center;
   gap: 12px;
+  border-radius: 8px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  transition: background 0.2s;
+}
+.item.running {
+  background: #fffbeb;
+  animation: pulse-row 1.8s ease-in-out infinite;
+}
+@keyframes pulse-row {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 .icon {
   width: 22px;
