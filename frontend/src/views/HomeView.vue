@@ -66,6 +66,7 @@ function connectStream(questionId: number) {
         store.setAgentStatus(agent, status.toLowerCase() as never)
         if (agent === 'RouterAgent' && result === 'not_stock') {
           store.isNotStock = true
+          store.answer = { not_stock: true } as never
           store.isLoading = false
           refreshHistory()
           close()
