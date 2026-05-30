@@ -189,14 +189,14 @@ async function refreshHistory() {
 .header {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   margin-bottom: 4px;
 }
 .logo-img {
-  width: 46px;
-  height: 46px;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: 16px;
   flex-shrink: 0;
 }
 .header-text {
