@@ -100,8 +100,9 @@ async function refreshHistory() {
       </header>
 
       <div class="notice">
-        💡 종목명 또는 티커를 포함한 <strong>단일 질문</strong>을 입력하면 AI가 분석해 드립니다.
-        <br /><span class="notice-example">예) "테슬라 주식 지금 사도 될까?", "NVDA 분석해줘"</span>
+        <span class="notice-version">v1 Beta</span>
+        현재 버전은 <strong>질문별 독립 분석</strong> 방식으로 동작합니다. 이전 질문과의 맥락은 아직 이어지지 않으니, 분석받고 싶은 종목을 질문 안에 함께 담아주세요.
+        <br /><span class="notice-example">예) "테슬라 지금 사도 될까?", "NVDA 단기 전망 알려줘"</span>
       </div>
 
       <QuestionInput :disabled="store.isLoading" @submit="onSubmit" />
@@ -179,6 +180,18 @@ async function refreshHistory() {
   line-height: 1.7;
 }
 .notice strong { color: #0369a1; }
+.notice-version {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #0369a1;
+  background: #e0f2fe;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-right: 6px;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
 .notice-example {
   font-size: 12px;
   color: #64748b;
