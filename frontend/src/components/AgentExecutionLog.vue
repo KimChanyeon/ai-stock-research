@@ -15,6 +15,7 @@ const agentLabel: Record<string, string> = {
 
 function formatDuration(ms: number | null): string {
   if (ms == null) return '-'
+  if (ms === 0) return '< 1s'   // MySQL DATETIME 초 단위 정밀도로 인한 반올림
   if (ms < 1000) return `${ms}ms`
   return `${(ms / 1000).toFixed(1)}s`
 }

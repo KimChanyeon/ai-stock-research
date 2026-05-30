@@ -38,12 +38,7 @@ public class QuestionProcessor {
             aiServiceClient.startRun(runId, q.getQuestion());
 
             aiServiceClient.streamEvents(runId, (event, data) -> {
-                try {
-                    emitter.send(SseEmitter.event().name(event).data(data));
-                } catch (IOException e) {
-                    log.warn("Failed to forward event to client, questionId={}", questionId);
-                }
-
+                // DB 기록 먼저 → 그 후 SSE 전송 (순서 보장으로 프론트 조회 시 최신 상태 반영)
                 if ("agent_status".equals(event)) {
                     String agentName = extractJsonString(data, "agent");
                     String agentStatus = extractJsonString(data, "status");
@@ -63,6 +58,12 @@ public class QuestionProcessor {
                     if (!data.contains("\"not_stock\"")) {
                         cacheService.set(q.getQuestion(), data);
                     }
+                }
+
+                try {
+                    emitter.send(SseEmitter.event().name(event).data(data));
+                } catch (IOException e) {
+                    log.warn("Failed to forward event to client, questionId={}", questionId);
                 }
             });
 
