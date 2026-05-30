@@ -64,6 +64,7 @@ function connectStream(questionId: number) {
         if (agent === 'RouterAgent' && result === 'not_stock') {
           store.isNotStock = true
           store.isLoading = false
+          refreshHistory()
           close()
         }
       },
