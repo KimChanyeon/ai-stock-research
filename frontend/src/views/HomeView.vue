@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useQuestionStore } from '@/stores/question'
 import { submitQuestion, fetchHistory, fetchQuestionDetail } from '@/api/question'
 import type { HistoryItem } from '@/api/question'
@@ -15,8 +15,12 @@ import logoUrl from '@/assets/logo.png'
 const store = useQuestionStore()
 const { connect, close } = useSSE()
 const hasAgentLogs = ref(false)
-const isCacheResult = ref(false)   // 캐시 히트로 즉시 반환된 답변인지
-const cacheMs = ref(0)             // 캐시 응답 실측 시간(ms)
+const cacheMs = ref<number | null>(null)   // 라이브 캐시 히트의 실측 응답시간(히스토리 탐색 시 null)
+
+// 분석 결과는 있는데 에이전트 로그가 없으면 캐시(저장된) 답변 → 캐시 안내 표시
+const showCacheNotice = computed(
+  () => !!store.answer && !store.answer.not_stock && !hasAgentLogs.value,
+)
 
 onMounted(async () => {
   try {
@@ -28,7 +32,8 @@ onMounted(async () => {
 
 async function onSubmit(question: string) {
   store.reset()
-  isCacheResult.value = false
+  hasAgentLogs.value = false
+  cacheMs.value = null
   store.isLoading = true
   store.currentQuestion = question
 
@@ -37,7 +42,6 @@ async function onSubmit(question: string) {
     const { questionId, cached } = await submitQuestion(question)
     store.currentQuestionId = questionId
     if (cached) {
-      isCacheResult.value = true
       cacheMs.value = Math.max(1, Math.round(performance.now() - t0))
       store.isHistoryResult = true
     }
@@ -51,7 +55,8 @@ async function onSubmit(question: string) {
 async function onHistorySelect(item: HistoryItem) {
   close()
   store.reset()
-  isCacheResult.value = false
+  hasAgentLogs.value = false
+  cacheMs.value = null   // 히스토리 탐색은 실측 응답시간 없음
   store.currentQuestion = item.question
 
   try {
@@ -168,11 +173,11 @@ async function refreshHistory() {
       </template>
     </main>
 
-    <!-- 오른쪽 사이드바: 캐시 안내 또는 실행 로그 -->
-    <aside v-show="isCacheResult || hasAgentLogs" class="log-sidebar">
-      <CacheNotice v-if="isCacheResult" :elapsed-ms="cacheMs" />
+    <!-- 오른쪽 사이드바: 캐시 안내(로그 없음) 또는 실행 로그(로그 있음) -->
+    <aside v-show="hasAgentLogs || showCacheNotice" class="log-sidebar">
+      <CacheNotice v-show="showCacheNotice" :elapsed-ms="cacheMs" />
       <AgentExecutionLog
-        v-show="!isCacheResult"
+        v-show="hasAgentLogs"
         :question-id="store.currentQuestionId"
         :answer="store.answer"
         @has-logs="hasAgentLogs = $event"

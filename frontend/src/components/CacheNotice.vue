@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{ elapsedMs: number }>()
+const props = defineProps<{ elapsedMs?: number | null }>()
 
 function formatMs(ms: number): string {
   if (ms < 1000) return `${ms}ms`
@@ -13,15 +13,15 @@ function formatMs(ms: number): string {
 
     <div class="badge">
       <span class="bolt">⚡</span>
-      초고속 캐시 답변
+      캐시된 분석 결과
     </div>
 
     <p class="desc">
-      동일한 질문이 최근에 분석되어, 에이전트 실행 과정을 생략하고
-      저장된 결과를 즉시 불러왔습니다.
+      동일한 질문에 대해 저장된 분석 결과를
+      에이전트 실행 과정 없이 불러왔습니다.
     </p>
 
-    <div class="metric">
+    <div v-if="props.elapsedMs != null" class="metric">
       <span class="metric-label">응답 시간</span>
       <span class="metric-value">{{ formatMs(props.elapsedMs) }}</span>
     </div>
