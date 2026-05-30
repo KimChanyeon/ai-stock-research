@@ -86,3 +86,4 @@ ai-service/htmlcov/
 
 # 포트폴리오 산출물 (스크립트로 생성)
 StockAgentHub_Portfolio.pptx
+scripts/make_portfolio_ppt.py
