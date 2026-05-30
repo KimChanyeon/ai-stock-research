@@ -26,7 +26,8 @@ async function onSubmit(question: string) {
   store.currentQuestion = question
 
   try {
-    const { questionId } = await submitQuestion(question)
+    const { questionId, cached } = await submitQuestion(question)
+    if (cached) store.isHistoryResult = true
     connectStream(questionId)
   } catch {
     store.isLoading = false
