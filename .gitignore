@@ -15,8 +15,11 @@ Thumbs.db
 *.iml
 *.ipr
 
-# ===== Claude Code =====
+# ===== Local docs (정리 후 README.md로 대체 예정) =====
 CLAUDE.md
+TODO.md
+DEV_PLAN.md
+Stock_Agent_Hub_MVP.md
 
 # ===== Environment =====
 .env
