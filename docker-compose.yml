@@ -79,10 +79,12 @@ services:
       - certbot-certs:/etc/letsencrypt
       - certbot-webroot:/var/www/certbot
     # 자동 갱신 데몬 (12시간마다 갱신 시도)
+    # webroot 경로는 최초 발급 시 renewal 설정에 저장되므로 renew 시 재지정 불필요.
+    # 갱신된 인증서는 frontend(nginx)가 6시간마다 reload하여 반영한다.
     entrypoint: >
       /bin/sh -c "trap exit TERM;
       while :; do
-        certbot renew --quiet --webroot -w /var/www/certbot;
+        certbot renew --quiet;
         sleep 12h & wait $${!};
       done"
 

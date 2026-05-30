@@ -11,9 +11,20 @@ set -e
 DOMAIN="${1:?Usage: $0 <domain> <email>}"
 EMAIL="${2:?Usage: $0 <domain> <email>}"
 
+echo "==> Cleaning up temporary self-signed cert (if any) ..."
+# frontend entrypoint.sh가 nginx 기동용으로 만든 임시 self-signed 인증서를 제거한다.
+# (certbot이 관리하지 않는 디렉토리라 그대로 두면 "live directory exists" 오류 발생)
+docker compose run --rm --entrypoint sh certbot -c "
+  rm -rf /etc/letsencrypt/live/${DOMAIN} \
+         /etc/letsencrypt/archive/${DOMAIN} \
+         /etc/letsencrypt/renewal/${DOMAIN}.conf
+"
+
 echo "==> Requesting certificate for ${DOMAIN} ..."
 
-docker compose run --rm certbot certonly \
+# certbot 서비스는 자동 갱신 루프를 entrypoint로 갖고 있으므로
+# 최초 발급 시에는 --entrypoint 로 certbot 바이너리를 직접 호출한다.
+docker compose run --rm --entrypoint certbot certbot certonly \
   --webroot \
   --webroot-path /var/www/certbot \
   --email "${EMAIL}" \

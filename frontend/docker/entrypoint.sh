@@ -24,4 +24,12 @@ envsubst '${DOMAIN}' \
   > /etc/nginx/conf.d/default.conf
 
 echo "[entrypoint] nginx config rendered for domain: ${DOMAIN}"
+
+# certbot이 인증서를 갱신해도 nginx는 자동으로 다시 읽지 않으므로
+# 6시간마다 reload 하여 갱신된 인증서를 반영한다.
+( while :; do
+    sleep 6h
+    nginx -s reload 2>/dev/null && echo "[entrypoint] nginx reloaded (cert refresh)"
+  done ) &
+
 exec nginx -g "daemon off;"
