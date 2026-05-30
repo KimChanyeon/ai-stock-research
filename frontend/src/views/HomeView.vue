@@ -9,11 +9,14 @@ import AgentStatus from '@/components/AgentStatus.vue'
 import AnswerResult from '@/components/AnswerResult.vue'
 import QuestionHistory from '@/components/QuestionHistory.vue'
 import AgentExecutionLog from '@/components/AgentExecutionLog.vue'
+import CacheNotice from '@/components/CacheNotice.vue'
 import logoUrl from '@/assets/logo.png'
 
 const store = useQuestionStore()
 const { connect, close } = useSSE()
 const hasAgentLogs = ref(false)
+const isCacheResult = ref(false)   // 캐시 히트로 즉시 반환된 답변인지
+const cacheMs = ref(0)             // 캐시 응답 실측 시간(ms)
 
 onMounted(async () => {
   try {
@@ -25,13 +28,19 @@ onMounted(async () => {
 
 async function onSubmit(question: string) {
   store.reset()
+  isCacheResult.value = false
   store.isLoading = true
   store.currentQuestion = question
 
   try {
+    const t0 = performance.now()
     const { questionId, cached } = await submitQuestion(question)
     store.currentQuestionId = questionId
-    if (cached) store.isHistoryResult = true
+    if (cached) {
+      isCacheResult.value = true
+      cacheMs.value = Math.max(1, Math.round(performance.now() - t0))
+      store.isHistoryResult = true
+    }
     connectStream(questionId)
   } catch {
     store.isLoading = false
@@ -42,6 +51,7 @@ async function onSubmit(question: string) {
 async function onHistorySelect(item: HistoryItem) {
   close()
   store.reset()
+  isCacheResult.value = false
   store.currentQuestion = item.question
 
   try {
@@ -158,9 +168,11 @@ async function refreshHistory() {
       </template>
     </main>
 
-    <!-- 오른쪽 사이드바: 실행 로그 (로그가 있을 때만 표시) -->
-    <aside v-show="hasAgentLogs" class="log-sidebar">
+    <!-- 오른쪽 사이드바: 캐시 안내 또는 실행 로그 -->
+    <aside v-show="isCacheResult || hasAgentLogs" class="log-sidebar">
+      <CacheNotice v-if="isCacheResult" :elapsed-ms="cacheMs" />
       <AgentExecutionLog
+        v-show="!isCacheResult"
         :question-id="store.currentQuestionId"
         :answer="store.answer"
         @has-logs="hasAgentLogs = $event"
