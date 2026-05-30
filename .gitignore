@@ -67,6 +67,7 @@ backend/nbdist/
 
 # ===== AI Service (Python) =====
 ai-service/.venv/
+ai-service/uv.lock
 ai-service/__pycache__/
 ai-service/**/__pycache__/
 ai-service/*.pyc
