@@ -6,15 +6,18 @@ from typing import Callable
 from crewai import LLM, Agent, Crew, Task
 
 from core.config import settings
+from tools.search_tool import GoogleSearchTool
 
 logger = logging.getLogger(__name__)
 
 Emitter = Callable[[str, dict], None]
 
+_search_tool = GoogleSearchTool()
+
 
 def _create_llm() -> LLM:
     return LLM(
-        model="gemini/gemini-3.1-flash-lite",
+        model=settings.gemini_model,
         api_key=settings.google_api_key,
         temperature=0.1,
     )
@@ -80,25 +83,30 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
 
         research_agent = Agent(
             role="Stock Research Analyst",
-            goal="Gather comprehensive information about a stock or company.",
+            goal="Gather comprehensive and up-to-date information about a stock or company using web search.",
             backstory=(
                 "You are a senior equity analyst with deep knowledge of global financial markets. "
-                "You research companies, analyze recent news, financial performance, and key business developments."
+                "You always search the web for the latest news and current data before writing your analysis. "
+                "You prioritize real-time information over training knowledge."
             ),
             llm=llm,
+            tools=[_search_tool],
             verbose=False,
         )
         research_task = Task(
             description=(
-                f"Research the following question thoroughly: {question}\n\n"
-                "Cover these areas:\n"
-                "1. Company/stock overview\n"
-                "2. Recent news and developments\n"
-                "3. Key financial metrics or performance\n"
-                "4. Major risks or concerns\n"
-                "Provide detailed, factual information."
+                f"Research the following question thoroughly using web search: {question}\n\n"
+                "Steps:\n"
+                "1. Use the Google Web Search tool to find the latest news and data about this stock/company.\n"
+                "2. Search for recent earnings, price movements, analyst opinions, and key events.\n"
+                "3. Synthesize the search results into a comprehensive report covering:\n"
+                "   - Company/stock overview and current market status\n"
+                "   - Recent news and developments (last 3-6 months)\n"
+                "   - Key financial metrics or performance\n"
+                "   - Major risks or concerns\n"
+                "Provide detailed, factual information based on current web data."
             ),
-            expected_output="Comprehensive research covering company overview, recent news, financials, and risks.",
+            expected_output="Comprehensive research based on current web data, covering company overview, recent news, financials, and risks.",
             agent=research_agent,
         )
         research_result = str(
