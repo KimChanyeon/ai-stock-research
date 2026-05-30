@@ -148,14 +148,14 @@ async function refreshHistory() {
             :is-history="store.isHistoryResult"
           />
 
-          <!-- 에이전트 실행 로그 -->
-          <AgentExecutionLog
-            v-if="store.answer && !store.answer.not_stock"
-            :question-id="store.currentQuestionId"
-          />
         </div>
       </template>
     </main>
+
+    <!-- 오른쪽 사이드바: 실행 로그 -->
+    <aside class="log-sidebar">
+      <AgentExecutionLog :question-id="store.currentQuestionId" />
+    </aside>
   </div>
 </template>
 
@@ -164,9 +164,15 @@ async function refreshHistory() {
   display: flex;
   gap: 24px;
   padding: 40px 32px;
-  max-width: 1080px;
+  max-width: 1280px;
   margin: 0 auto;
   align-items: flex-start;
+}
+.log-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 32px;
 }
 .main {
   flex: 1;

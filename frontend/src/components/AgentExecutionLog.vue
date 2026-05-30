@@ -6,7 +6,6 @@ import type { AgentLogEntry } from '@/api/question'
 const props = defineProps<{ questionId: number | null }>()
 
 const logs = ref<AgentLogEntry[]>([])
-const open = ref(false)
 
 const agentLabel: Record<string, string> = {
   RouterAgent: '질문 판별',
@@ -27,10 +26,9 @@ function totalMs(): number {
 watch(
   () => props.questionId,
   async (id) => {
-    if (!id) { logs.value = []; open.value = false; return }
+    if (!id) { logs.value = []; return }
     try {
       logs.value = await fetchAgentLogs(id)
-      open.value = logs.value.length > 0
     } catch {
       logs.value = []
     }
@@ -40,100 +38,146 @@ watch(
 </script>
 
 <template>
-  <div v-if="logs.length > 0" class="log-wrap">
-    <button class="toggle" @click="open = !open">
-      <span class="toggle-icon">{{ open ? '▾' : '▸' }}</span>
-      실행 로그
-      <span class="total">총 {{ formatDuration(totalMs()) }}</span>
-    </button>
+  <div class="card">
+    <p class="title">실행 로그</p>
 
-    <div v-if="open" class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>에이전트</th>
-            <th>상태</th>
-            <th>소요시간</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="log in logs" :key="log.id">
-            <td class="agent-name">{{ agentLabel[log.agentName] ?? log.agentName }}</td>
-            <td>
-              <span class="status-badge" :class="log.status.toLowerCase()">
-                {{ log.status === 'SUCCESS' ? '완료' : log.status === 'FAIL' ? '실패' : '실행 중' }}
-              </span>
-            </td>
-            <td class="duration">{{ formatDuration(log.durationMs) }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- 빈 상태 -->
+    <p v-if="logs.length === 0" class="empty">분석 후 로그가<br />표시됩니다.</p>
+
+    <!-- 로그 목록 -->
+    <ul v-else class="list">
+      <li v-for="log in logs" :key="log.id" class="item" :class="log.status.toLowerCase()">
+        <div class="item-header">
+          <span class="agent-name">{{ agentLabel[log.agentName] ?? log.agentName }}</span>
+          <span class="status-dot" :class="log.status.toLowerCase()" />
+        </div>
+        <div class="item-footer">
+          <span class="badge" :class="log.status.toLowerCase()">
+            {{ log.status === 'SUCCESS' ? '완료' : log.status === 'FAIL' ? '실패' : '실행 중' }}
+          </span>
+          <span class="duration">{{ formatDuration(log.durationMs) }}</span>
+        </div>
+      </li>
+    </ul>
+
+    <!-- 합계 -->
+    <div v-if="logs.length > 0" class="total">
+      <span>총 소요</span>
+      <span class="total-val">{{ formatDuration(totalMs()) }}</span>
     </div>
   </div>
 </template>
 
 <style scoped>
-.log-wrap {
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  overflow: hidden;
+.card {
   background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1.5px solid #e2e8f0;
 }
-.toggle {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 11px 16px;
-  background: #f8fafc;
-  border: none;
-  cursor: pointer;
+.title {
   font-size: 12px;
   font-weight: 600;
-  color: #475569;
-  text-align: left;
-}
-.toggle:hover { background: #f1f5f9; }
-.toggle-icon { font-size: 11px; color: #94a3b8; }
-.total {
-  margin-left: auto;
-  font-size: 11px;
-  font-weight: 500;
   color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
 }
-
-.table-wrap { overflow-x: auto; }
-.table {
-  width: 100%;
-  border-collapse: collapse;
+.empty {
   font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.7;
 }
-.table th {
-  padding: 8px 16px;
-  text-align: left;
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.item {
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+.item.success { background: #f0fdf4; border-color: #bbf7d0; }
+.item.fail    { background: #fef2f2; border-color: #fecaca; }
+.item.running {
+  background: #fffbeb;
+  border-color: #fde68a;
+  animation: pulse-item 1.6s ease-in-out infinite;
+}
+@keyframes pulse-item {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.7; }
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.agent-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.item.fail .agent-name    { color: #991b1b; }
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.success { background: #22c55e; }
+.status-dot.fail    { background: #ef4444; }
+.status-dot.running {
+  background: #f59e0b;
+  animation: blink 1s ease-in-out infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+.item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.badge {
   font-size: 11px;
   font-weight: 600;
-  color: #94a3b8;
-  border-bottom: 1px solid #f1f5f9;
-  background: #fafafa;
-}
-.table td {
-  padding: 9px 16px;
-  color: #334155;
-  border-bottom: 1px solid #f8fafc;
-}
-.table tr:last-child td { border-bottom: none; }
-
-.agent-name { font-weight: 500; }
-.duration { color: #64748b; font-variant-numeric: tabular-nums; }
-
-.status-badge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 99px;
 }
-.status-badge.success { color: #16a34a; background: #dcfce7; }
-.status-badge.fail    { color: #dc2626; background: #fee2e2; }
-.status-badge.running { color: #d97706; background: #fef9e7; }
+.badge.success { color: #16a34a; background: #dcfce7; }
+.badge.fail    { color: #dc2626; background: #fee2e2; }
+.badge.running { color: #d97706; background: #fef9e7; }
+
+.duration {
+  font-size: 12px;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 12px;
+  color: #94a3b8;
+}
+.total-val {
+  font-weight: 600;
+  color: #475569;
+}
 </style>
