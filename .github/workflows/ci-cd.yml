@@ -103,6 +103,8 @@ jobs:
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
+          # uv.lock은 gitignore 대상이므로 캐시 키를 pyproject.toml 기준으로 설정
+          cache-dependency-glob: ai-service/pyproject.toml
 
       - name: Sync & Compile check
         working-directory: ai-service
