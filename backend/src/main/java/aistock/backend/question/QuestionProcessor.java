@@ -46,7 +46,9 @@ public class QuestionProcessor {
                     q.setStatus(QuestionStatus.SUCCESS);
                     q.setAnswer(data);
                     questionRepository.save(q);
-                    cacheService.set(q.getQuestion(), data);
+                    if (!data.contains("\"not_stock\"")) {
+                        cacheService.set(q.getQuestion(), data);
+                    }
                 }
             });
 

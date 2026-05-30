@@ -1,15 +1,14 @@
 package aistock.backend.ai;
 
 import aistock.backend.common.AppProperties;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Map;
 import java.util.function.BiConsumer;
 
 @Component
@@ -17,23 +16,29 @@ import java.util.function.BiConsumer;
 public class AiServiceClient {
 
     private final AppProperties appProperties;
-    private final RestClient restClient;
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .version(HttpClient.Version.HTTP_1_1)
+            .build();
 
     public AiServiceClient(AppProperties appProperties) {
         this.appProperties = appProperties;
-        this.restClient = RestClient.builder().build();
     }
 
+    @SneakyThrows
     public void startRun(String runId, String question) {
-        restClient.post()
-                .uri(appProperties.getUrl() + "/api/v1/agents/run")
-                .body(Map.of("runId", runId, "question", question))
-                .retrieve()
-                .toBodilessEntity();
+        String escaped = question.replace("\\", "\\\\").replace("\"", "\\\"");
+        String body = "{\"runId\":\"" + runId + "\",\"question\":\"" + escaped + "\"}";
+        byte[] bodyBytes = body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(appProperties.getUrl() + "/api/v1/agents/run"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes))
+                .build();
+        httpClient.send(request, HttpResponse.BodyHandlers.discarding());
     }
 
     public void streamEvents(String runId, BiConsumer<String, String> handler) throws Exception {
-        HttpClient client = HttpClient.newHttpClient();
+        HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(appProperties.getUrl() + "/api/v1/agents/stream/" + runId))
                 .header("Accept", "text/event-stream")

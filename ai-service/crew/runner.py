@@ -71,6 +71,7 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
 
         if not is_stock:
             logger.info("Not a stock question — pipeline stopped")
+            emit("complete", {"not_stock": True})
             return
 
         # ── 2. Research Agent ──────────────────────────────────────
