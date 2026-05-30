@@ -81,32 +81,35 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
         logger.debug("ResearchAgent starting")
         emit("agent_status", {"agent": "ResearchAgent", "status": "RUNNING"})
 
+        # 웹 검색으로 최신 정보 수집 (crewAI tool loop 우회, 직접 주입)
+        logger.debug("Web search starting for: %.60s", question)
+        web_data = _search_tool._run(
+            f"Latest stock news, earnings, analyst opinions, and price analysis: {question}"
+        )
+        logger.info("Web search completed, data length=%d", len(web_data))
+
         research_agent = Agent(
             role="Stock Research Analyst",
-            goal="Gather comprehensive and up-to-date information about a stock or company using web search.",
+            goal="Gather comprehensive and up-to-date information about a stock or company.",
             backstory=(
                 "You are a senior equity analyst with deep knowledge of global financial markets. "
-                "You always search the web for the latest news and current data before writing your analysis. "
-                "You prioritize real-time information over training knowledge."
+                "You research companies, analyze recent news, financial performance, and key business developments."
             ),
             llm=llm,
-            tools=[_search_tool],
             verbose=False,
         )
         research_task = Task(
             description=(
-                f"Research the following question thoroughly using web search: {question}\n\n"
-                "Steps:\n"
-                "1. Use the Google Web Search tool to find the latest news and data about this stock/company.\n"
-                "2. Search for recent earnings, price movements, analyst opinions, and key events.\n"
-                "3. Synthesize the search results into a comprehensive report covering:\n"
-                "   - Company/stock overview and current market status\n"
-                "   - Recent news and developments (last 3-6 months)\n"
-                "   - Key financial metrics or performance\n"
-                "   - Major risks or concerns\n"
-                "Provide detailed, factual information based on current web data."
+                f"Research the following question thoroughly: {question}\n\n"
+                f"CURRENT WEB DATA (retrieved in real-time):\n{web_data}\n\n"
+                "Based on the above current web data and your expertise, provide a comprehensive report covering:\n"
+                "1. Company/stock overview and current market status\n"
+                "2. Recent news and developments\n"
+                "3. Key financial metrics or performance\n"
+                "4. Major risks or concerns\n"
+                "Provide detailed, factual information."
             ),
-            expected_output="Comprehensive research based on current web data, covering company overview, recent news, financials, and risks.",
+            expected_output="Comprehensive research covering company overview, recent news, financials, and risks.",
             agent=research_agent,
         )
         research_result = str(
