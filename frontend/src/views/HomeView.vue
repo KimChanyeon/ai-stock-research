@@ -101,8 +101,13 @@ async function refreshHistory() {
 
       <div class="notice">
         <span class="notice-version">v1 Beta</span>
-        현재 버전은 <strong>질문별 독립 분석</strong> 방식으로 동작합니다. 이전 질문과의 맥락은 아직 이어지지 않으니, 분석받고 싶은 종목을 질문 안에 함께 담아주세요.
-        <br /><span class="notice-example">예) "테슬라 지금 사도 될까?", "NVDA 단기 전망 알려줘"</span>
+        <p>
+          현재 버전은 <strong>질문별 독립 분석</strong> 방식으로 동작합니다.
+        </p>
+        <p>
+          이전 질문과의 맥락은 아직 이어지지 않으니, 분석받고 싶은 종목을 질문 안에 함께 담아주세요.
+        </p>
+        <span class="notice-example">예) "테슬라 지금 사도 될까?", "NVDA 단기 전망 알려줘"</span>
       </div>
 
       <QuestionInput :disabled="store.isLoading" @submit="onSubmit" />
@@ -126,7 +131,10 @@ async function refreshHistory() {
             <span class="not-stock-icon">🔍</span>
             <div>
               <p class="not-stock-title">주식 관련 질문이 아닙니다</p>
-              <p class="not-stock-sub">종목명이나 티커를 포함해서 다시 질문해보세요.<br/>예) "테슬라 지금 매수해도 될까?", "NVDA 전망 알려줘"</p>
+              <p class="not-stock-sub">
+                종목명이나 티커를 포함해서 다시 질문해보세요.<br />예) "테슬라 지금 매수해도 될까?",
+                "NVDA 전망 알려줘"
+              </p>
             </div>
           </div>
 
@@ -158,7 +166,9 @@ async function refreshHistory() {
   gap: 20px;
   min-width: 0;
 }
-.header { margin-bottom: 4px; }
+.header {
+  margin-bottom: 4px;
+}
 .logo {
   font-size: 22px;
   font-weight: 700;
@@ -179,7 +189,9 @@ async function refreshHistory() {
   padding: 12px 16px;
   line-height: 1.7;
 }
-.notice strong { color: #0369a1; }
+.notice strong {
+  color: #0369a1;
+}
 .notice-version {
   display: inline-block;
   font-size: 10px;
@@ -223,7 +235,11 @@ async function refreshHistory() {
   border-radius: 12px;
   padding: 18px 20px;
 }
-.not-stock-icon { font-size: 22px; line-height: 1; margin-top: 2px; }
+.not-stock-icon {
+  font-size: 22px;
+  line-height: 1;
+  margin-top: 2px;
+}
 .not-stock-title {
   font-size: 14px;
   font-weight: 600;
