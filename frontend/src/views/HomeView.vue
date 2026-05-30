@@ -9,6 +9,7 @@ import AgentStatus from '@/components/AgentStatus.vue'
 import AnswerResult from '@/components/AnswerResult.vue'
 import QuestionHistory from '@/components/QuestionHistory.vue'
 import AgentExecutionLog from '@/components/AgentExecutionLog.vue'
+import logoUrl from '@/assets/logo.png'
 
 const store = useQuestionStore()
 const { connect, close } = useSSE()
@@ -99,8 +100,11 @@ async function refreshHistory() {
 
     <main class="main">
       <header class="header">
-        <h1 class="logo">Stock Agent Hub</h1>
-        <p class="desc">멀티 에이전트 기반 주식 분석 서비스</p>
+        <img :src="logoUrl" class="logo-img" alt="Stock Agent Hub 로고" />
+        <div class="header-text">
+          <h1 class="logo">Stock Agent Hub</h1>
+          <p class="desc">멀티 에이전트 기반 주식 분석 서비스</p>
+        </div>
       </header>
 
       <div class="notice">
@@ -183,7 +187,20 @@ async function refreshHistory() {
   min-width: 0;
 }
 .header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   margin-bottom: 4px;
+}
+.logo-img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.header-text {
+  min-width: 0;
 }
 .logo {
   font-size: 22px;
