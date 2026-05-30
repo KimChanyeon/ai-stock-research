@@ -4,12 +4,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class AgentLogService {
 
     private final AgentExecutionLogRepository repository;
+
+    public List<AgentLogResponse> getLogsForQuestion(Long questionId) {
+        return repository.findByQuestionIdOrderByStartedAt(questionId)
+                .stream()
+                .map(AgentLogResponse::new)
+                .toList();
+    }
 
     public void logStart(Long questionId, String runId, String agentName) {
         AgentExecutionLog entry = new AgentExecutionLog();

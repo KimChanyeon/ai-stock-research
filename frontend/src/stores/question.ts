@@ -21,6 +21,7 @@ export interface Answer {
 
 export const useQuestionStore = defineStore('question', () => {
   const currentQuestion = ref('')
+  const currentQuestionId = ref<number | null>(null)
   const isLoading = ref(false)
   const isNotStock = ref(false)
   const isHistoryResult = ref(false)
@@ -37,6 +38,7 @@ export const useQuestionStore = defineStore('question', () => {
   function reset() {
     agents.value.forEach((a) => (a.status = 'idle'))
     answer.value = null
+    currentQuestionId.value = null
     isNotStock.value = false
     isHistoryResult.value = false
     error.value = null
@@ -47,5 +49,5 @@ export const useQuestionStore = defineStore('question', () => {
     if (agent) agent.status = status
   }
 
-  return { currentQuestion, isLoading, isNotStock, isHistoryResult, error, answer, history, agents, reset, setAgentStatus }
+  return { currentQuestion, currentQuestionId, isLoading, isNotStock, isHistoryResult, error, answer, history, agents, reset, setAgentStatus }
 })

@@ -1,5 +1,7 @@
 package aistock.backend.question;
 
+import aistock.backend.agent.AgentLogResponse;
+import aistock.backend.agent.AgentLogService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -15,6 +17,7 @@ import java.util.List;
 public class QuestionController {
 
     private final QuestionService questionService;
+    private final AgentLogService agentLogService;
 
     @PostMapping("/questions")
     public ResponseEntity<QuestionResponse> submit(@Valid @RequestBody QuestionRequest req) {
@@ -35,6 +38,11 @@ public class QuestionController {
         return questionService.getQuestionDetail(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/questions/{id}/agent-logs")
+    public ResponseEntity<List<AgentLogResponse>> agentLogs(@PathVariable Long id) {
+        return ResponseEntity.ok(agentLogService.getLogsForQuestion(id));
     }
 
     @GetMapping("/history")

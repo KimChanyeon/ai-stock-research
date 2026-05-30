@@ -42,3 +42,17 @@ export async function fetchQuestionDetail(id: number): Promise<QuestionDetail> {
   const { data } = await api.get<QuestionDetail>(`/questions/${id}`)
   return data
 }
+
+export interface AgentLogEntry {
+  id: number
+  agentName: string
+  status: string
+  startedAt: string
+  finishedAt: string | null
+  durationMs: number | null
+}
+
+export async function fetchAgentLogs(questionId: number): Promise<AgentLogEntry[]> {
+  const { data } = await api.get<AgentLogEntry[]>(`/questions/${questionId}/agent-logs`)
+  return data
+}

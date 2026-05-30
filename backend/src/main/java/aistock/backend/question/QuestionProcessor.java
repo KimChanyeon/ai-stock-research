@@ -77,11 +77,14 @@ public class QuestionProcessor {
     }
 
     private String extractJsonString(String json, String key) {
-        String searchKey = "\"" + key + "\":\"";
-        int start = json.indexOf(searchKey);
-        if (start == -1) return null;
-        start += searchKey.length();
-        int end = json.indexOf("\"", start);
-        return end == -1 ? null : json.substring(start, end);
+        // json.dumps는 "key": "value" (콜론 뒤 공백) 형식으로 직렬화하므로
+        // 콜론까지만 찾은 뒤 첫 따옴표를 기준으로 값 추출
+        String searchKey = "\"" + key + "\":";
+        int keyPos = json.indexOf(searchKey);
+        if (keyPos == -1) return null;
+        int valStart = json.indexOf("\"", keyPos + searchKey.length());
+        if (valStart == -1) return null;
+        int valEnd = json.indexOf("\"", valStart + 1);
+        return valEnd == -1 ? null : json.substring(valStart + 1, valEnd);
     }
 }

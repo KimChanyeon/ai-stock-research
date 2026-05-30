@@ -8,6 +8,7 @@ import QuestionInput from '@/components/QuestionInput.vue'
 import AgentStatus from '@/components/AgentStatus.vue'
 import AnswerResult from '@/components/AnswerResult.vue'
 import QuestionHistory from '@/components/QuestionHistory.vue'
+import AgentExecutionLog from '@/components/AgentExecutionLog.vue'
 
 const store = useQuestionStore()
 const { connect, close } = useSSE()
@@ -27,6 +28,7 @@ async function onSubmit(question: string) {
 
   try {
     const { questionId, cached } = await submitQuestion(question)
+    store.currentQuestionId = questionId
     if (cached) store.isHistoryResult = true
     connectStream(questionId)
   } catch {
@@ -44,6 +46,7 @@ async function onHistorySelect(item: HistoryItem) {
     const detail = await fetchQuestionDetail(item.id)
     if (detail.answer && detail.status === 'SUCCESS') {
       store.isHistoryResult = true
+      store.currentQuestionId = item.id
       store.answer = detail.answer
     } else {
       // 답변 없으면 새로 실행
@@ -143,6 +146,12 @@ async function refreshHistory() {
             v-if="store.answer && !store.answer.not_stock"
             :answer="store.answer"
             :is-history="store.isHistoryResult"
+          />
+
+          <!-- 에이전트 실행 로그 -->
+          <AgentExecutionLog
+            v-if="store.answer && !store.answer.not_stock"
+            :question-id="store.currentQuestionId"
           />
         </div>
       </template>
