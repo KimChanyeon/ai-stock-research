@@ -2,10 +2,10 @@ from pydantic import BaseModel
 
 
 class RunRequest(BaseModel):
-    run_id: str
+    runId: str
     question: str
 
 
 class RunResponse(BaseModel):
     status: str
-    run_id: str
+    runId: str

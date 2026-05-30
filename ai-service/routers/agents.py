@@ -16,11 +16,11 @@ _run_queues: Dict[str, asyncio.Queue] = {}
 
 @router.post("/agents/run", response_model=RunResponse)
 async def start_run(request: RunRequest):
-    if request.run_id in _run_queues:
+    if request.runId in _run_queues:
         raise HTTPException(status_code=409, detail="run_id already exists")
 
     queue: asyncio.Queue = asyncio.Queue()
-    _run_queues[request.run_id] = queue
+    _run_queues[request.runId] = queue
 
     loop = asyncio.get_running_loop()
 
@@ -30,7 +30,7 @@ async def start_run(request: RunRequest):
 
     loop.run_in_executor(None, run_stock_analysis, request.question, emit)
 
-    return RunResponse(status="started", run_id=request.run_id)
+    return RunResponse(status="started", runId=request.runId)
 
 
 @router.get("/agents/stream/{run_id}")
