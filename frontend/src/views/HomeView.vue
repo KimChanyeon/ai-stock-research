@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useQuestionStore } from '@/stores/question'
 import { submitQuestion, fetchHistory, fetchQuestionDetail } from '@/api/question'
 import type { HistoryItem } from '@/api/question'
@@ -13,6 +13,7 @@ import logoUrl from '@/assets/logo.png'
 
 const store = useQuestionStore()
 const { connect, close } = useSSE()
+const hasAgentLogs = ref(false)
 
 onMounted(async () => {
   try {
@@ -157,9 +158,13 @@ async function refreshHistory() {
       </template>
     </main>
 
-    <!-- 오른쪽 사이드바: 실행 로그 -->
-    <aside class="log-sidebar">
-      <AgentExecutionLog :question-id="store.currentQuestionId" :answer="store.answer" />
+    <!-- 오른쪽 사이드바: 실행 로그 (로그가 있을 때만 표시) -->
+    <aside v-show="hasAgentLogs" class="log-sidebar">
+      <AgentExecutionLog
+        :question-id="store.currentQuestionId"
+        :answer="store.answer"
+        @has-logs="hasAgentLogs = $event"
+      />
     </aside>
   </div>
 </template>

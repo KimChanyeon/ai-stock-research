@@ -4,6 +4,7 @@ import { fetchAgentLogs } from '@/api/question'
 import type { AgentLogEntry } from '@/api/question'
 
 const props = defineProps<{ questionId: number | null; answer?: unknown }>()
+const emit = defineEmits<{ 'has-logs': [boolean] }>()
 
 const logs = ref<AgentLogEntry[]>([])
 
@@ -27,12 +28,13 @@ function totalMs(): number {
 watch(
   () => [props.questionId, props.answer],
   async ([id]) => {
-    if (!id) { logs.value = []; return }
+    if (!id) { logs.value = []; emit('has-logs', false); return }
     try {
       logs.value = await fetchAgentLogs(id as number)
     } catch {
       logs.value = []
     }
+    emit('has-logs', logs.value.length > 0)
   },
   { immediate: true },
 )
@@ -42,11 +44,8 @@ watch(
   <div class="card">
     <p class="title">실행 로그</p>
 
-    <!-- 빈 상태 -->
-    <p v-if="logs.length === 0" class="empty">분석 후 로그가<br />표시됩니다.</p>
-
     <!-- 로그 목록 -->
-    <ul v-else class="list">
+    <ul class="list">
       <li v-for="log in logs" :key="log.id" class="item" :class="log.status.toLowerCase()">
         <div class="item-header">
           <span class="agent-name">{{ agentLabel[log.agentName] ?? log.agentName }}</span>
@@ -84,12 +83,6 @@ watch(
   letter-spacing: 0.06em;
   margin-bottom: 16px;
 }
-.empty {
-  font-size: 13px;
-  color: #cbd5e1;
-  line-height: 1.7;
-}
-
 .list {
   list-style: none;
   padding: 0;
