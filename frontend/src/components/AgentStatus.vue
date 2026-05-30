@@ -3,63 +3,111 @@ import { computed } from 'vue'
 import type { AgentState } from '@/stores/question'
 
 const props = defineProps<{ agents: AgentState[]; isNotStock: boolean }>()
+
 const isAnyRunning = computed(() => props.agents.some((a) => a.status === 'running'))
+const isAllDone = computed(() => props.agents.every((a) => a.status === 'success' || a.status === 'fail'))
+
+const cardTitle = computed(() => {
+  if (isAnyRunning.value) return 'AI 분석 진행 중'
+  if (isAllDone.value) return '분석 완료'
+  return '분석 준비 중'
+})
+
+const descMap: Record<string, Record<string, string>> = {
+  RouterAgent: {
+    running: '질문이 주식 관련인지 파악하고 있어요',
+    success: '주식 관련 질문으로 확인됐습니다',
+    fail: '질문 분류에 실패했습니다',
+  },
+  ResearchAgent: {
+    running: '최신 시장 데이터를 검색 중이에요',
+    success: '시장 데이터 수집이 완료됐습니다',
+    fail: '데이터 수집에 실패했습니다',
+  },
+  SummaryAgent: {
+    running: '투자 분석 리포트를 작성 중이에요',
+    success: '분석 리포트가 완성됐습니다',
+    fail: '리포트 작성에 실패했습니다',
+  },
+}
+
+function desc(agent: AgentState): string {
+  return descMap[agent.name]?.[agent.status] ?? ''
+}
 </script>
 
 <template>
   <div class="card">
-    <!-- 실행 중 진행 표시줄 -->
+    <!-- 실행 중 shimmer 바 -->
     <div class="progress-track">
       <div v-if="isAnyRunning" class="progress-bar" />
     </div>
 
-    <p class="card-title">Agent 진행 상태</p>
-
-    <div v-if="isNotStock" class="not-stock">
-      주식 관련 질문이 아닙니다. 주식에 관한 질문을 입력해 주세요.
+    <!-- 헤더 -->
+    <div class="header">
+      <span class="card-title">{{ cardTitle }}</span>
+      <span v-if="isAnyRunning" class="live-badge">
+        <span class="live-dot" />
+        LIVE
+      </span>
+      <span v-if="isAllDone && !isNotStock" class="done-badge">✓ 완료</span>
     </div>
 
-    <ul v-else class="list">
-      <li v-for="agent in agents" :key="agent.name" class="item" :class="agent.status">
-        <!-- 스피너 (running) / 아이콘 (기타) -->
-        <span class="icon-wrap">
-          <span v-if="agent.status === 'running'" class="spinner" />
-          <span v-else class="icon" :class="agent.status">
-            <template v-if="agent.status === 'success'">✔</template>
-            <template v-else-if="agent.status === 'fail'">✖</template>
-            <template v-else>○</template>
-          </span>
-        </span>
+    <!-- 비주식 -->
+    <div v-if="isNotStock" class="not-stock">
+      주식 관련 질문이 아닙니다. 종목명이나 티커를 포함해서 다시 질문해주세요.
+    </div>
 
-        <span class="label">{{ agent.label }}</span>
+    <!-- 타임라인 스텝 -->
+    <div v-else class="steps">
+      <div
+        v-for="(agent, idx) in agents"
+        :key="agent.name"
+        class="step"
+      >
+        <!-- 좌측: 스텝 인디케이터 + 연결선 -->
+        <div class="track">
+          <div class="dot" :class="agent.status">
+            <span v-if="agent.status === 'running'" class="dot-spinner" />
+            <span v-else-if="agent.status === 'success'" class="dot-icon">✓</span>
+            <span v-else-if="agent.status === 'fail'" class="dot-icon fail">✕</span>
+            <span v-else class="dot-num">{{ idx + 1 }}</span>
+          </div>
+          <div
+            v-if="idx < agents.length - 1"
+            class="connector"
+            :class="{ lit: agent.status === 'success' }"
+          />
+        </div>
 
-        <span class="badge" :class="agent.status">
-          <template v-if="agent.status === 'running'">
-            <span class="dots">분석 중</span>
-          </template>
-          <template v-else-if="agent.status === 'success'">완료</template>
-          <template v-else-if="agent.status === 'fail'">실패</template>
-          <template v-else-if="agent.status === 'pending'">대기 중</template>
-        </span>
-      </li>
-    </ul>
+        <!-- 우측: 텍스트 -->
+        <div class="body" :class="agent.status">
+          <div class="row">
+            <span class="label">{{ agent.label }}</span>
+            <span class="badge" :class="agent.status">
+              <span v-if="agent.status === 'running'" class="dots">분석 중</span>
+              <template v-else-if="agent.status === 'success'">완료</template>
+              <template v-else-if="agent.status === 'fail'">실패</template>
+              <template v-else>대기</template>
+            </span>
+          </div>
+          <p v-if="desc(agent)" class="step-desc" :class="agent.status">{{ desc(agent) }}</p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .card {
   background: #fff;
-  border-radius: 12px;
-  padding: 0;
+  border-radius: 14px;
   border: 1.5px solid #e2e8f0;
   overflow: hidden;
 }
 
-/* 상단 진행 표시줄 */
-.progress-track {
-  height: 3px;
-  background: #f1f5f9;
-}
+/* shimmer */
+.progress-track { height: 3px; background: #f1f5f9; }
 .progress-bar {
   height: 100%;
   background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 40%, #fde68a 60%, #f59e0b 100%);
@@ -71,97 +119,180 @@ const isAnyRunning = computed(() => props.agents.some((a) => a.status === 'runni
   100% { background-position: -200% 0; }
 }
 
-.card-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 20px 24px 16px;
-  margin: 0;
-}
-.list {
-  list-style: none;
-  padding: 0 24px 20px;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* 행 */
-.item {
+/* 헤더 */
+.header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-radius: 8px;
-  padding: 10px 12px;
-  transition: background 0.2s;
+  gap: 10px;
+  padding: 18px 22px 14px;
 }
-.item.running {
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-  border: 1px solid #fde68a;
-  box-shadow: 0 1px 6px rgba(245, 158, 11, 0.12);
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  flex: 1;
+  letter-spacing: 0.01em;
 }
-.item.success { background: #f0fdf4; }
-.item.fail    { background: #fef2f2; }
-.item.idle,
-.item.pending { background: #f8fafc; }
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ef4444;
+  letter-spacing: 0.05em;
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: blink 1.1s ease-in-out infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.8); }
+}
+.done-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #16a34a;
+  background: #dcfce7;
+  border-radius: 99px;
+  padding: 2px 9px;
+}
 
-/* 스피너 */
-.icon-wrap {
-  width: 22px;
+/* 스텝 목록 */
+.steps {
+  padding: 0 22px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+/* 좌측 트랙 */
+.track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+/* 스텝 원 */
+.dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
   flex-shrink: 0;
+  transition: all 0.3s;
 }
-.spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
+.dot.idle,
+.dot.pending {
+  background: #f8fafc;
+  color: #94a3b8;
+  border: 2px solid #e2e8f0;
+}
+.dot.running {
+  background: #fef3c7;
+  border: 2px solid #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15), 0 0 16px rgba(245, 158, 11, 0.25);
+  animation: glow-pulse 1.6s ease-in-out infinite;
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(245,158,11,.15), 0 0 16px rgba(245,158,11,.25); }
+  50%       { box-shadow: 0 0 0 7px rgba(245,158,11,.22), 0 0 24px rgba(245,158,11,.35); }
+}
+.dot.success {
+  background: #dcfce7;
+  border: 2px solid #22c55e;
+}
+.dot.fail {
+  background: #fee2e2;
+  border: 2px solid #ef4444;
+}
+.dot-num { color: #94a3b8; font-size: 13px; }
+.dot-icon { font-size: 15px; color: #16a34a; font-weight: 700; }
+.dot-icon.fail { color: #ef4444; }
+
+/* 스피너 */
+.dot-spinner {
+  width: 18px;
+  height: 18px;
   border: 2.5px solid #fde68a;
   border-top-color: #f59e0b;
   border-radius: 50%;
-  animation: spin 0.75s linear infinite;
+  animation: spin 0.7s linear infinite;
 }
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.icon {
-  font-size: 14px;
-  width: 16px;
-  text-align: center;
-}
-.icon.success { color: #22c55e; }
-.icon.fail    { color: #ef4444; }
-.icon.idle,
-.icon.pending { color: #cbd5e1; }
-
-.label {
+/* 연결선 */
+.connector {
+  width: 2px;
   flex: 1;
-  font-size: 14px;
-  color: #1e293b;
-  font-weight: 500;
+  min-height: 22px;
+  background: #e2e8f0;
+  margin: 5px 0 5px;
+  border-radius: 1px;
+  transition: background 0.4s;
 }
-.item.idle .label,
-.item.pending .label { color: #94a3b8; }
+.connector.lit { background: #22c55e; }
+
+/* 우측 본문 */
+.body {
+  flex: 1;
+  padding: 6px 0 20px;
+  min-height: 42px;
+}
+.body:last-child { padding-bottom: 4px; }
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  flex: 1;
+}
+.body.idle .label,
+.body.pending .label { color: #94a3b8; font-weight: 500; }
 
 /* 배지 */
 .badge {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
   border-radius: 99px;
+  white-space: nowrap;
 }
 .badge.success { color: #16a34a; background: #dcfce7; }
 .badge.running  { color: #d97706; background: #fef9e7; }
 .badge.fail     { color: #dc2626; background: #fee2e2; }
 .badge.idle,
-.badge.pending  { color: #94a3b8; background: #f1f5f9; }
+.badge.pending  { color: #cbd5e1; background: #f8fafc; }
 
-/* 타이핑 점 애니메이션 */
+/* 설명 텍스트 */
+.step-desc {
+  font-size: 12px;
+  margin: 4px 0 0;
+  line-height: 1.5;
+}
+.step-desc.running  { color: #92400e; }
+.step-desc.success  { color: #15803d; }
+.step-desc.fail     { color: #b91c1c; }
+
+/* 타이핑 점 */
 .dots::after {
   content: '';
   animation: typing-dots 1.2s steps(3, end) infinite;
@@ -173,13 +304,15 @@ const isAnyRunning = computed(() => props.agents.some((a) => a.status === 'runni
   100% { content: '...'; }
 }
 
+/* 비주식 */
 .not-stock {
-  font-size: 14px;
+  font-size: 13px;
   color: #92400e;
   background: #fffbeb;
   border: 1px solid #fde68a;
   border-radius: 8px;
   padding: 12px 14px;
-  margin: 0 24px 20px;
+  margin: 0 22px 20px;
+  line-height: 1.6;
 }
 </style>

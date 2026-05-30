@@ -3,6 +3,16 @@ import type { HistoryItem } from '@/api/question'
 
 defineProps<{ history: HistoryItem[] }>()
 const emit = defineEmits<{ select: [item: HistoryItem] }>()
+
+function timeAgo(dateStr: string): string {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
+  if (diff < 60) return '방금 전'
+  if (diff < 3600) return `${Math.floor(diff / 60)}분 전`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}시간 전`
+  if (diff < 604800) return `${Math.floor(diff / 86400)}일 전`
+  const d = new Date(dateStr)
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`
+}
 </script>
 
 <template>
@@ -16,7 +26,8 @@ const emit = defineEmits<{ select: [item: HistoryItem] }>()
         class="item"
         @click="emit('select', item)"
       >
-        {{ item.question }}
+        <span class="question">{{ item.question }}</span>
+        <span class="time">{{ timeAgo(item.createdAt) }}</span>
       </li>
     </ul>
   </aside>
@@ -54,18 +65,26 @@ const emit = defineEmits<{ select: [item: HistoryItem] }>()
   gap: 2px;
 }
 .item {
-  font-size: 13px;
-  color: #475569;
-  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 10px;
   border-radius: 7px;
   cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   transition: background 0.15s, color 0.15s;
 }
-.item:hover {
-  background: #f1f5f9;
-  color: #1e293b;
+.item:hover { background: #f1f5f9; }
+.item:hover .question { color: #1e293b; }
+
+.question {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.45;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.time {
+  font-size: 11px;
+  color: #94a3b8;
 }
 </style>

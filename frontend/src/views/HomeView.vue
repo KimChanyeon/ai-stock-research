@@ -111,11 +111,23 @@ async function refreshHistory() {
       <template v-if="store.currentQuestion && !store.error">
         <p class="current-question">"{{ store.currentQuestion }}"</p>
         <div class="results">
+          <!-- 실시간 분석 중: 에이전트 상태 -->
           <AgentStatus
             v-if="!store.isHistoryResult"
             :agents="store.agents"
             :is-not-stock="store.isNotStock"
           />
+
+          <!-- 이전 조회 결과 — 비주식 -->
+          <div v-if="store.isHistoryResult && store.answer?.not_stock" class="not-stock-history">
+            <span class="not-stock-icon">🔍</span>
+            <div>
+              <p class="not-stock-title">주식 관련 질문이 아닙니다</p>
+              <p class="not-stock-sub">종목명이나 티커를 포함해서 다시 질문해보세요.<br/>예) "테슬라 지금 매수해도 될까?", "NVDA 전망 알려줘"</p>
+            </div>
+          </div>
+
+          <!-- 분석 결과 -->
           <AnswerResult
             v-if="store.answer && !store.answer.not_stock"
             :answer="store.answer"
@@ -186,5 +198,26 @@ async function refreshHistory() {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+.not-stock-history {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.not-stock-icon { font-size: 22px; line-height: 1; margin-top: 2px; }
+.not-stock-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 6px;
+}
+.not-stock-sub {
+  font-size: 13px;
+  color: #b45309;
+  line-height: 1.6;
 }
 </style>
