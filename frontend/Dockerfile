@@ -6,6 +6,12 @@ COPY . .
 RUN npm run build-only
 
 FROM nginx:alpine
+RUN apk add --no-cache openssl
+
 COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 80 443
+ENTRYPOINT ["/entrypoint.sh"]

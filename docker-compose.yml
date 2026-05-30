@@ -69,10 +69,31 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - certbot-certs:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot:ro
     depends_on:
       - backend
       - ai-service
 
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-certs:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    # 자동 갱신 데몬 (12시간마다 갱신 시도)
+    entrypoint: >
+      /bin/sh -c "trap exit TERM;
+      while :; do
+        certbot renew --quiet --webroot -w /var/www/certbot;
+        sleep 12h & wait $${!};
+      done"
+
 volumes:
   mysql_data:
+  certbot-certs:
+  certbot-webroot:
