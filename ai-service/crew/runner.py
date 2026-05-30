@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from typing import Callable
 
@@ -6,12 +7,14 @@ from crewai import LLM, Agent, Crew, Task
 
 from core.config import settings
 
+logger = logging.getLogger(__name__)
+
 Emitter = Callable[[str, dict], None]
 
 
 def _create_llm() -> LLM:
     return LLM(
-        model="gemini/gemini-2.0-flash",
+        model="gemini/gemini-3.1-flash-lite",
         api_key=settings.google_api_key,
         temperature=0.1,
     )
@@ -31,10 +34,12 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
     3단계 crewAI 파이프라인을 동기 실행한다.
     스레드풀에서 호출되므로 emit은 call_soon_threadsafe로 감싸진 콜백이어야 한다.
     """
+    logger.info("run_stock_analysis started | question=%.60s", question)
     llm = _create_llm()
 
     try:
         # ── 1. Router Agent ────────────────────────────────────────
+        logger.debug("RouterAgent starting")
         emit("agent_status", {"agent": "RouterAgent", "status": "RUNNING"})
 
         router_agent = Agent(
@@ -61,12 +66,15 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
         is_stock = "stock_related" in router_output
         result_value = "stock_related" if is_stock else "not_stock"
 
+        logger.info("RouterAgent result=%s", result_value)
         emit("agent_status", {"agent": "RouterAgent", "status": "SUCCESS", "result": result_value})
 
         if not is_stock:
+            logger.info("Not a stock question — pipeline stopped")
             return
 
         # ── 2. Research Agent ──────────────────────────────────────
+        logger.debug("ResearchAgent starting")
         emit("agent_status", {"agent": "ResearchAgent", "status": "RUNNING"})
 
         research_agent = Agent(
@@ -96,9 +104,11 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
             Crew(agents=[research_agent], tasks=[research_task], verbose=False).kickoff()
         )
 
+        logger.info("ResearchAgent completed")
         emit("agent_status", {"agent": "ResearchAgent", "status": "SUCCESS"})
 
         # ── 3. Summary Agent ───────────────────────────────────────
+        logger.debug("SummaryAgent starting")
         emit("agent_status", {"agent": "SummaryAgent", "status": "RUNNING"})
 
         summary_agent = Agent(
@@ -125,6 +135,7 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
             Crew(agents=[summary_agent], tasks=[summary_task], verbose=False).kickoff()
         )
 
+        logger.info("SummaryAgent completed")
         emit("agent_status", {"agent": "SummaryAgent", "status": "SUCCESS"})
 
         # ── 4. Parse & emit complete ───────────────────────────────
@@ -140,7 +151,9 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
         except Exception:
             answer = {"summary": summary_output, "positives": [], "risks": []}
 
+        logger.info("Pipeline completed successfully")
         emit("complete", answer)
 
     except Exception as e:
+        logger.error("Pipeline failed: %s", e, exc_info=True)
         emit("error", {"message": str(e)})

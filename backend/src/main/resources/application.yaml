@@ -29,5 +29,5 @@ ai-service:
   url: ${AI_SERVICE_URL:http://localhost:8000}
 
 logging:
-  level:
-    aistock.backend: DEBUG
+  file:
+    path: logs   # 로컬: backend/logs/, Docker: /app/logs/
