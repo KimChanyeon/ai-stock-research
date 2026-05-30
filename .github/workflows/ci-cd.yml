@@ -1,0 +1,139 @@
+name: CI/CD
+
+# main 푸시 → 빌드·테스트 후 VM에 자동 배포
+# PR → 빌드·테스트만 수행 (배포 X)
+#
+# ── 필요한 GitHub Secrets ─────────────────────────────────
+#   SSH_HOST      배포 VM 주소 (퍼블릭 IP 또는 도메인)
+#   SSH_USER      SSH 사용자 (예: ubuntu)
+#   SSH_KEY       VM 접속용 PEM 개인키 전체 내용
+#   SSH_PORT      (선택) SSH 포트, 미설정 시 22
+#   DEPLOY_PATH   VM 내 레포 경로 (예: /home/ubuntu/app/ai-stock-research)
+# ──────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Backend: 빌드 + 테스트 (MySQL·Redis 서비스 컨테이너) ──
+  backend:
+    name: Backend Build & Test
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: app
+          MYSQL_USER: appuser
+          MYSQL_PASSWORD: apppass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=3s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build & Test
+        working-directory: backend
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/app?serverTimezone=UTC&characterEncoding=UTF-8
+          SPRING_DATASOURCE_USERNAME: appuser
+          SPRING_DATASOURCE_PASSWORD: apppass
+          SPRING_DATA_REDIS_HOST: 127.0.0.1
+          SPRING_DATA_REDIS_PORT: 6379
+        run: |
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+
+  # ── Frontend: 타입 체크 + 빌드 ──
+  frontend:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install & Build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+  # ── AI Service: 의존성 설치 + 문법 검증 ──
+  ai-service:
+    name: AI Service Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Sync & Compile check
+        working-directory: ai-service
+        run: |
+          uv sync
+          uv run python -m compileall main.py core crew routers schemas tools
+
+  # ── Deploy: main 푸시 시에만, 모든 검증 통과 후 SSH 배포 ──
+  deploy:
+    name: Deploy to VM
+    needs: [backend, frontend, ai-service]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
+            echo "==> Pulling latest main ..."
+            git fetch --all --prune
+            git reset --hard origin/main
+            echo "==> Starting infra (mysql, redis) ..."
+            docker compose up -d mysql redis
+            echo "==> Building & restarting services ..."
+            docker compose up -d --build
+            echo "==> Pruning dangling images ..."
+            docker image prune -f
+            echo "==> Deploy complete."
