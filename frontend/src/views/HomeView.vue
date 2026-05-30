@@ -154,7 +154,7 @@ async function refreshHistory() {
 
     <!-- 오른쪽 사이드바: 실행 로그 -->
     <aside class="log-sidebar">
-      <AgentExecutionLog :question-id="store.currentQuestionId" />
+      <AgentExecutionLog :question-id="store.currentQuestionId" :answer="store.answer" />
     </aside>
   </div>
 </template>

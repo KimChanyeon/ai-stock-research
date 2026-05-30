@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { fetchAgentLogs } from '@/api/question'
 import type { AgentLogEntry } from '@/api/question'
 
-const props = defineProps<{ questionId: number | null }>()
+const props = defineProps<{ questionId: number | null; answer?: unknown }>()
 
 const logs = ref<AgentLogEntry[]>([])
 
@@ -24,11 +24,11 @@ function totalMs(): number {
 }
 
 watch(
-  () => props.questionId,
-  async (id) => {
+  () => [props.questionId, props.answer],
+  async ([id]) => {
     if (!id) { logs.value = []; return }
     try {
-      logs.value = await fetchAgentLogs(id)
+      logs.value = await fetchAgentLogs(id as number)
     } catch {
       logs.value = []
     }
