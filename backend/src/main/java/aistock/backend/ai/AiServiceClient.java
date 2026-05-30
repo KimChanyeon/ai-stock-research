@@ -19,9 +19,9 @@ public class AiServiceClient {
     private final AppProperties appProperties;
     private final RestClient restClient;
 
-    public AiServiceClient(AppProperties appProperties, RestClient.Builder builder) {
+    public AiServiceClient(AppProperties appProperties) {
         this.appProperties = appProperties;
-        this.restClient = builder.build();
+        this.restClient = RestClient.builder().build();
     }
 
     public void startRun(String runId, String question) {
