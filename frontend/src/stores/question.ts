@@ -11,15 +11,19 @@ export interface AgentState {
 }
 
 export interface Answer {
+  ticker?: string | null
+  recommendation?: 'BUY' | 'HOLD' | 'SELL' | null
   summary: string
   positives: string[]
   risks: string[]
+  not_stock?: boolean
 }
 
 export const useQuestionStore = defineStore('question', () => {
   const currentQuestion = ref('')
   const isLoading = ref(false)
   const isNotStock = ref(false)
+  const isHistoryResult = ref(false)
   const error = ref<string | null>(null)
   const answer = ref<Answer | null>(null)
   const history = ref<HistoryItem[]>([])
@@ -34,6 +38,7 @@ export const useQuestionStore = defineStore('question', () => {
     agents.value.forEach((a) => (a.status = 'idle'))
     answer.value = null
     isNotStock.value = false
+    isHistoryResult.value = false
     error.value = null
   }
 
@@ -42,5 +47,5 @@ export const useQuestionStore = defineStore('question', () => {
     if (agent) agent.status = status
   }
 
-  return { currentQuestion, isLoading, isNotStock, error, answer, history, agents, reset, setAgentStatus }
+  return { currentQuestion, isLoading, isNotStock, isHistoryResult, error, answer, history, agents, reset, setAgentStatus }
 })

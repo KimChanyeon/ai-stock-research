@@ -2,7 +2,7 @@
 import type { HistoryItem } from '@/api/question'
 
 defineProps<{ history: HistoryItem[] }>()
-const emit = defineEmits<{ select: [question: string] }>()
+const emit = defineEmits<{ select: [item: HistoryItem] }>()
 </script>
 
 <template>
@@ -14,7 +14,7 @@ const emit = defineEmits<{ select: [question: string] }>()
         v-for="item in history"
         :key="item.id"
         class="item"
-        @click="emit('select', item.question)"
+        @click="emit('select', item)"
       >
         {{ item.question }}
       </li>

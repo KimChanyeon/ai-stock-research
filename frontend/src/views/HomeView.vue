@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useQuestionStore } from '@/stores/question'
-import { submitQuestion, fetchHistory } from '@/api/question'
+import { submitQuestion, fetchHistory, fetchQuestionDetail } from '@/api/question'
+import type { HistoryItem } from '@/api/question'
 import { useSSE } from '@/composables/useSSE'
 import QuestionInput from '@/components/QuestionInput.vue'
 import AgentStatus from '@/components/AgentStatus.vue'
@@ -30,6 +31,25 @@ async function onSubmit(question: string) {
   } catch {
     store.isLoading = false
     store.error = '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.'
+  }
+}
+
+async function onHistorySelect(item: HistoryItem) {
+  close()
+  store.reset()
+  store.currentQuestion = item.question
+
+  try {
+    const detail = await fetchQuestionDetail(item.id)
+    if (detail.answer && detail.status === 'SUCCESS') {
+      store.isHistoryResult = true
+      store.answer = detail.answer
+    } else {
+      // 답변 없으면 새로 실행
+      await onSubmit(item.question)
+    }
+  } catch {
+    await onSubmit(item.question)
   }
 }
 
@@ -69,13 +89,18 @@ async function refreshHistory() {
 
 <template>
   <div class="layout">
-    <QuestionHistory :history="store.history" @select="onSubmit" />
+    <QuestionHistory :history="store.history" @select="onHistorySelect" />
 
     <main class="main">
       <header class="header">
         <h1 class="logo">Stock Agent Hub</h1>
         <p class="desc">멀티 에이전트 기반 주식 분석 서비스</p>
       </header>
+
+      <div class="notice">
+        💡 종목명 또는 티커를 포함한 <strong>단일 질문</strong>을 입력하면 AI가 분석해 드립니다.
+        <br /><span class="notice-example">예) "테슬라 주식 지금 사도 될까?", "NVDA 분석해줘"</span>
+      </div>
 
       <QuestionInput :disabled="store.isLoading" @submit="onSubmit" />
 
@@ -86,8 +111,16 @@ async function refreshHistory() {
       <template v-if="store.currentQuestion && !store.error">
         <p class="current-question">"{{ store.currentQuestion }}"</p>
         <div class="results">
-          <AgentStatus :agents="store.agents" :is-not-stock="store.isNotStock" />
-          <AnswerResult v-if="store.answer" :answer="store.answer" />
+          <AgentStatus
+            v-if="!store.isHistoryResult"
+            :agents="store.agents"
+            :is-not-stock="store.isNotStock"
+          />
+          <AnswerResult
+            v-if="store.answer && !store.answer.not_stock"
+            :answer="store.answer"
+            :is-history="store.isHistoryResult"
+          />
         </div>
       </template>
     </main>
@@ -121,6 +154,22 @@ async function refreshHistory() {
   font-size: 13px;
   color: #94a3b8;
 }
+
+.notice {
+  font-size: 13px;
+  color: #475569;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  padding: 12px 16px;
+  line-height: 1.7;
+}
+.notice strong { color: #0369a1; }
+.notice-example {
+  font-size: 12px;
+  color: #64748b;
+}
+
 .error-banner {
   font-size: 14px;
   color: #991b1b;

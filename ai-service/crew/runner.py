@@ -124,12 +124,14 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
                 f"Based on the research below, write a structured analysis for: {question}\n\n"
                 f"Research:\n{research_result}\n\n"
                 "IMPORTANT: Return ONLY a raw JSON object. No markdown, no code blocks, no extra text.\n"
-                'Format: {"summary": "...", "positives": ["...", "..."], "risks": ["...", "..."]}\n'
+                'Format: {"ticker": "TSLA", "recommendation": "BUY", "summary": "...", "positives": ["...", "..."], "risks": ["...", "..."]}\n'
+                "- ticker: stock ticker symbol (e.g. TSLA, AAPL, 005930.KS). Use null if not identifiable.\n"
+                "- recommendation: one of BUY / HOLD / SELL based on overall analysis. Use null if ticker is null.\n"
                 "- summary: 2-3 sentence overview\n"
                 "- positives: 2-4 key positive factors (array of strings)\n"
                 "- risks: 2-4 key risk factors (array of strings)"
             ),
-            expected_output='Raw JSON: {"summary": "...", "positives": [...], "risks": [...]}',
+            expected_output='Raw JSON: {"ticker": "...", "recommendation": "BUY|HOLD|SELL", "summary": "...", "positives": [...], "risks": [...]}',
             agent=summary_agent,
         )
         summary_output = str(
@@ -142,15 +144,16 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
         # ── 4. Parse & emit complete ───────────────────────────────
         try:
             answer = _extract_json(summary_output)
-            # 필드 보정
             if "summary" not in answer:
                 answer["summary"] = summary_output
             if "positives" not in answer:
                 answer["positives"] = []
             if "risks" not in answer:
                 answer["risks"] = []
+            answer.setdefault("ticker", None)
+            answer.setdefault("recommendation", None)
         except Exception:
-            answer = {"summary": summary_output, "positives": [], "risks": []}
+            answer = {"ticker": None, "recommendation": None, "summary": summary_output, "positives": [], "risks": []}
 
         logger.info("Pipeline completed successfully")
         emit("complete", answer)

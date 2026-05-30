@@ -1,5 +1,6 @@
 package aistock.backend.question;
 
+import aistock.backend.agent.AgentLogService;
 import aistock.backend.ai.AiServiceClient;
 import aistock.backend.cache.CacheService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class QuestionProcessor {
     private final QuestionRepository questionRepository;
     private final CacheService cacheService;
     private final AiServiceClient aiServiceClient;
+    private final AgentLogService agentLogService;
 
     @Async
     public void process(Long questionId, SseEmitter emitter) {
@@ -42,6 +44,18 @@ public class QuestionProcessor {
                     log.warn("Failed to forward event to client, questionId={}", questionId);
                 }
 
+                if ("agent_status".equals(event)) {
+                    String agentName = extractJsonString(data, "agent");
+                    String agentStatus = extractJsonString(data, "status");
+                    if (agentName != null && agentStatus != null) {
+                        if ("RUNNING".equals(agentStatus)) {
+                            agentLogService.logStart(questionId, runId, agentName);
+                        } else {
+                            agentLogService.logEnd(runId, agentName, agentStatus);
+                        }
+                    }
+                }
+
                 if ("complete".equals(event)) {
                     q.setStatus(QuestionStatus.SUCCESS);
                     q.setAnswer(data);
@@ -60,5 +74,14 @@ public class QuestionProcessor {
             questionRepository.save(q);
             emitter.completeWithError(e);
         }
+    }
+
+    private String extractJsonString(String json, String key) {
+        String searchKey = "\"" + key + "\":\"";
+        int start = json.indexOf(searchKey);
+        if (start == -1) return null;
+        start += searchKey.length();
+        int end = json.indexOf("\"", start);
+        return end == -1 ? null : json.substring(start, end);
     }
 }

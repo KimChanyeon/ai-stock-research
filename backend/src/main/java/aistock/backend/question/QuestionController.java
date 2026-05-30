@@ -30,6 +30,13 @@ public class QuestionController {
         return questionService.stream(questionId);
     }
 
+    @GetMapping("/questions/{id}")
+    public ResponseEntity<QuestionDetailResponse> getQuestion(@PathVariable Long id) {
+        return questionService.getQuestionDetail(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/history")
     public ResponseEntity<List<HistoryResponse>> history(@RequestParam String userKey) {
         return ResponseEntity.ok(questionService.getHistory(userKey));

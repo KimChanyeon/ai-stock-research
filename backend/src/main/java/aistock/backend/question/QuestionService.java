@@ -82,6 +82,13 @@ public class QuestionService {
         return emitter;
     }
 
+    public Optional<QuestionDetailResponse> getQuestionDetail(Long id) {
+        return questionRepository.findById(id)
+                .map(q -> new QuestionDetailResponse(
+                        q.getId(), q.getQuestion(), q.getAnswer(),
+                        q.getStatus().name(), q.getCreatedAt()));
+    }
+
     public List<HistoryResponse> getHistory(String userKey) {
         return questionRepository.findTop10ByUserKeyOrderByCreatedAtDesc(userKey)
                 .stream()
