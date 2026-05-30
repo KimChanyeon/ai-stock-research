@@ -173,8 +173,8 @@ async function refreshHistory() {
       </template>
     </main>
 
-    <!-- 오른쪽 사이드바: 캐시 안내(로그 없음) 또는 실행 로그(로그 있음) -->
-    <aside v-show="hasAgentLogs || showCacheNotice" class="log-sidebar">
+    <!-- 오른쪽 사이드바: 항상 영역 유지(레이아웃 고정), 내용만 토글 -->
+    <aside class="log-sidebar">
       <CacheNotice v-show="showCacheNotice" :elapsed-ms="cacheMs" />
       <AgentExecutionLog
         v-show="hasAgentLogs"
