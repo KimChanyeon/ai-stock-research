@@ -59,7 +59,7 @@ function connectStream(questionId: number) {
     {
       agent_status: (data: unknown) => {
         const { agent, status, result } = data as { agent: string; status: string; result?: string }
-        store.setAgentStatus(agent, status as never)
+        store.setAgentStatus(agent, status.toLowerCase() as never)
         if (agent === 'RouterAgent' && result === 'not_stock') {
           store.isNotStock = true
           store.isLoading = false

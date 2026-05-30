@@ -107,9 +107,9 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
                 "2. Recent news and developments\n"
                 "3. Key financial metrics or performance\n"
                 "4. Major risks or concerns\n"
-                "Provide detailed, factual information."
+                "IMPORTANT: Write your response in Korean."
             ),
-            expected_output="Comprehensive research covering company overview, recent news, financials, and risks.",
+            expected_output="Comprehensive research in Korean covering company overview, recent news, financials, and risks.",
             agent=research_agent,
         )
         research_result = str(
@@ -138,9 +138,10 @@ def run_stock_analysis(question: str, emit: Emitter) -> None:
                 'Format: {"ticker": "TSLA", "recommendation": "BUY", "summary": "...", "positives": ["...", "..."], "risks": ["...", "..."]}\n'
                 "- ticker: stock ticker symbol (e.g. TSLA, AAPL, 005930.KS). Use null if not identifiable.\n"
                 "- recommendation: one of BUY / HOLD / SELL based on overall analysis. Use null if ticker is null.\n"
-                "- summary: 2-3 sentence overview\n"
-                "- positives: 2-4 key positive factors (array of strings)\n"
-                "- risks: 2-4 key risk factors (array of strings)"
+                "- summary: 2-3 sentence overview (Korean)\n"
+                "- positives: 2-4 key positive factors (array of Korean strings)\n"
+                "- risks: 2-4 key risk factors (array of Korean strings)\n"
+                "IMPORTANT: All text values must be written in Korean."
             ),
             expected_output='Raw JSON: {"ticker": "...", "recommendation": "BUY|HOLD|SELL", "summary": "...", "positives": [...], "risks": [...]}',
             agent=summary_agent,
