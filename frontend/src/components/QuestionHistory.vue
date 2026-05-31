@@ -87,4 +87,19 @@ function timeAgo(dateStr: string): string {
   font-size: 11px;
   color: #94a3b8;
 }
+
+/* ── 반응형: 모바일에서 전체 폭, 최하단 배치 ── */
+@media (max-width: 860px) {
+  .sidebar {
+    width: 100%;
+    position: static;
+    top: auto;
+    order: 3;
+  }
+  /* 목록이 길어지면 스크롤 (모바일 화면 점유 최소화) */
+  .list {
+    max-height: 260px;
+    overflow-y: auto;
+  }
+}
 </style>

@@ -306,4 +306,44 @@ async function refreshHistory() {
   color: #b45309;
   line-height: 1.6;
 }
+
+/* ── 반응형: 태블릿·모바일 ── */
+@media (max-width: 860px) {
+  .layout {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 24px 16px;
+    gap: 16px;
+  }
+  /* 메인 → 결과 패널 → 히스토리 순으로 재배치 */
+  .main {
+    order: 1;
+    width: 100%;
+  }
+  .log-sidebar {
+    order: 2;
+    width: 100%;
+    position: static;
+    top: auto;
+  }
+}
+
+/* ── 반응형: 소형 모바일 ── */
+@media (max-width: 480px) {
+  .layout {
+    padding: 18px 12px;
+  }
+  .logo-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 13px;
+  }
+  .logo {
+    font-size: 19px;
+  }
+  .notice {
+    font-size: 12.5px;
+    padding: 11px 13px;
+  }
+}
 </style>
